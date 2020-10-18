@@ -31,7 +31,8 @@ ggplot(w1p1, aes(x, y, color = displayName)) +
     geom_point(alpha = 0.5) +
     xlim(0, 130) +
     ylim(0, 63.3) +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom") +
+    theme_bw()
 ```
 
 Let's look at the players involved with the football: football, Matt
@@ -49,15 +50,18 @@ ggplot(w1p1ball, aes(x, y, color = displayName)) +
     geom_point(alpha = 0.5) +
     xlim(0, 130) +
     ylim(0, 63.3) +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom") +
+    theme_bw()
 
 ggplot(w1p1ball, aes(time, s, color = displayName)) +
-    geom_line() +
-    theme(legend.position = "bottom")
+    geom_line() + 
+    theme(legend.position = "bottom") +
+    theme_bw()
 
 ggplot(w1p1ball, aes(time, a, color = displayName)) +
     geom_line()  +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom") +
+    theme_bw()
 ```
 
 NExt, I'm going to plot a vector for each point showing where the
@@ -84,7 +88,8 @@ ggplot(w1p1, aes(x, y, color = displayName)) +
     geom_point() +
     geom_segment(aes(xend = x + xVel, yend = y + yVel),
                  arrow = arrow(length = unit(0.1, "cm"))) +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom") +
+    theme_bw()
 ```
 
 The above plot doesn't really show much. Of course their direction
@@ -100,6 +105,7 @@ ggplot(w1p1, aes(x, y, color = displayName)) +
     geom_point() +
     geom_segment(aes(xend = x + sin(o_rad), yend = y + cos(o_rad) ),
                  arrow = arrow(length = unit(0.1, "cm"))) +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom") +
+    theme_bw()
 
 ```
