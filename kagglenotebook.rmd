@@ -1,0 +1,105 @@
+---
+title: "Working Kaggle Notebook"
+author: "Roy Emanuel"
+output: github_document
+---
+
+# Initial Data Plots of the field during a play
+
+The first step I took was to look at the tracking data to see if I
+could plot it. This was pretty straightforward. 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+Plot of the first play available. 
+
+
+```{r echo = FALSE}
+library(tidyverse)
+## load the week one data
+w1 <- read_csv("week1.csv")
+all_plays <- read_csv("plays.csv")
+
+w1p1 <-
+    w1 %>%
+    filter(playId == 75)
+
+## Plot the first pass play
+ggplot(w1p1, aes(x, y, color = displayName)) +
+    geom_point(alpha = 0.5) +
+    xlim(0, 130) +
+    ylim(0, 63.3) +
+    theme(legend.position = "bottom")
+```
+
+Let's look at the players involved with the football: football, Matt
+Ryan, Julio Jones and Malcolm Jenkins.
+
+```{r echo = FALSE, fig.width = 7, fig.height = 4}
+w1p1ball <-
+    w1p1 %>%
+    filter(displayName == "Matt Ryan" |
+           displayName == "Julio Jones" |
+           displayName == "Football" |
+           displayName == "Malcolm Jenkins")
+
+ggplot(w1p1ball, aes(x, y, color = displayName)) +
+    geom_point(alpha = 0.5) +
+    xlim(0, 130) +
+    ylim(0, 63.3) +
+    theme(legend.position = "bottom")
+
+ggplot(w1p1ball, aes(time, s, color = displayName)) +
+    geom_line() +
+    theme(legend.position = "bottom")
+
+ggplot(w1p1ball, aes(time, a, color = displayName)) +
+    geom_line()  +
+    theme(legend.position = "bottom")
+```
+
+NExt, I'm going to plot a vector for each point showing where the
+player is moving and how fast relatively. 
+
+```{r echo=FALSE, fig.width = 7, fig.height = 4}
+bld_vector <- function(trkdata) {
+    no_football <-
+        trkdata %>%
+        filter(displayName != "Football")
+    fastest <- max(no_football$s)
+    trkdata <-
+        trkdata %>%
+        mutate(sNorm = s / fastest,
+               dir_rad = dir * pi / 180,
+               o_rad = o * pi / 180, 
+               yVel = cos(dir_rad) * sNorm,
+               xVel = sin(dir_rad) * sNorm)
+    return(trkdata)
+}
+
+w1p1 <- bld_vector(w1p1)
+ggplot(w1p1, aes(x, y, color = displayName)) +
+    geom_point() +
+    geom_segment(aes(xend = x + xVel, yend = y + yVel),
+                 arrow = arrow(length = unit(0.1, "cm"))) +
+    theme(legend.position = "bottom")
+```
+
+The above plot doesn't really show much. Of course their direction
+aligns with their next point in space. That doesn't do much. So let's
+look where everyone is facing. 
+
+The arrow vector shows the direction the player was facing during at
+each time step. 
+
+```{r echo=FALSE, fig.width=7, fig.height=4}
+
+ggplot(w1p1, aes(x, y, color = displayName)) +
+    geom_point() +
+    geom_segment(aes(xend = x + sin(o_rad), yend = y + cos(o_rad) ),
+                 arrow = arrow(length = unit(0.1, "cm"))) +
+    theme(legend.position = "bottom")
+
+```
