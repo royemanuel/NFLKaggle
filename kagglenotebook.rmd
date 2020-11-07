@@ -206,3 +206,9 @@ $$mu_i = \beta_0 + \beta_{def}x_{def,i} + \beta{off}x_{off,i}$$
 
 $$\sigma \~ \text{Gamma}\left(0.1, 0.1\right)$$
 
+```{r firstFit}
+fitOffDef <-
+    stan_glm(
+        epa ~ defendersInTheBox + personnelO + defendersInTheBox:personnelO,
+        data = all_plays)
+```
