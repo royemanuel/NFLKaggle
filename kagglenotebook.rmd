@@ -19,6 +19,7 @@ Plot of the first play available.
 ```{r echo = FALSE}
 library(tidyverse)
 library(rstan)
+library(rstanarm)
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
 ## load the week one data
@@ -125,9 +126,9 @@ First we will build a linear model. The minimum recorded epa is
 What is the prior? Let's start with a normal likelihood, normal prior,
 and see what comes out. Everything is additive, and away we go...
 
-$$y_{i} ~ \text{Normal}\left(\mu_i, \sigma\right)$$
+$$y_{i} \~ \text{Normal}\left(\mu_i, \sigma\right)$$
 
 $$mu_i = \beta_0 + \beta_{def}x_{def,i} + \beta{off}x_{off,i}$$
 
-$$\sigma ~ \text{Gamma}\left(0.1, 0.1\right)$$
+$$\sigma \~ \text{Gamma}\left(0.1, 0.1\right)$$
 
