@@ -10,7 +10,12 @@ The first step I took was to look at the tracking data to see if I
 could plot it. This was pretty straightforward. 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
+library(tidyverse)
+library(captioner)
+library(pander)
+table_nums <- captioner(prefix = "Table")
+fig_nums <- captioner()
 ```
 
 Plot of the first play available. 
@@ -25,6 +30,7 @@ rstan_options(auto_write = TRUE)
 ## load the week one data
 w1 <- read_csv("week1.csv")
 all_plays <- read_csv("plays.csv")
+game_data <- read_csv("games.csv")
 
 w1p1 <-
     w1 %>%
@@ -35,8 +41,9 @@ ggplot(w1p1, aes(x, y, color = displayName)) +
     geom_point(alpha = 0.5) +
     xlim(0, 130) +
     ylim(0, 63.3) +
-    theme(legend.position = "bottom") +
-    theme_bw()
+    theme_bw() +
+    theme(legend.position = "bottom")
+fig_nums(name = "p1", caption = "Movement of all players")
 ```
 
 Let's look at the players involved with the football: football, Matt
@@ -54,18 +61,22 @@ ggplot(w1p1ball, aes(x, y, color = displayName)) +
     geom_point(alpha = 0.5) +
     xlim(0, 130) +
     ylim(0, 63.3) +
-    theme(legend.position = "bottom") +
-    theme_bw()
+    theme_bw() +
+    theme(legend.position = "bottom")
+fig_nums(name = "p1_involved", caption = "Movement of players closest to the football")
+
 
 ggplot(w1p1ball, aes(time, s, color = displayName)) +
     geom_line() + 
-    theme(legend.position = "bottom") +
-    theme_bw()
+    theme_bw() + 
+    theme(legend.position = "bottom")
+fig_nums(name = "p1_speed", caption = "Speed of players closest to the football over time")
 
 ggplot(w1p1ball, aes(time, a, color = displayName)) +
     geom_line()  +
     theme(legend.position = "bottom") +
     theme_bw()
+fig_nums(name = "p1_speed", caption = "Acceleration of players closest to the football over time")
 ```
 
 NExt, I'm going to plot a vector for each point showing where the
@@ -92,8 +103,8 @@ ggplot(w1p1, aes(x, y, color = displayName)) +
     geom_point() +
     geom_segment(aes(xend = x + xVel, yend = y + yVel),
                  arrow = arrow(length = unit(0.1, "cm"))) +
-    theme(legend.position = "bottom") +
-    theme_bw()
+    theme_bw() + theme(legend.position = "bottom")
+fig_nums(name = "Pos_Speed", caption = "Position plots with speed vector")
 ```
 
 The above plot doesn't really show much. Of course their direction
@@ -109,8 +120,71 @@ ggplot(w1p1, aes(x, y, color = displayName)) +
     geom_point() +
     geom_segment(aes(xend = x + sin(o_rad), yend = y + cos(o_rad) ),
                  arrow = arrow(length = unit(0.1, "cm"))) +
-    theme(legend.position = "bottom") +
+theme_bw() + theme(legend.position = "bottom")
+fig_nums(name = "Pos_Orientation", caption = "Position plots with orientation vector")
+
+```
+
+
+# Passing and closure
+
+Ok, now I'm playing around with the passing a little bit. Let's see
+where this goes.
+
+```{r passExplore, echo=FALSE}
+releaseSpeed <- w1 %>% group_by(gameId, playId) %>% filter(displayName == "Football") %>% summarise(max_vel = max(s), max_acc = max(a)) %>%
+    left_join(., all_plays, by=c("gameId", "playId"))
+slowPass <- releaseSpeed %>% filter(max_vel <5)
+ggplot(releaseSpeed, aes(max_vel, color = passResult, fill = passResult)) +
+    geom_histogram(alpha = 0.5, binwidth = 0.5) +
     theme_bw()
+fig_nums(name = "releaseSpeed", caption = "Histogram of Football maximum speeds with outcomes for week 1 2018")
+
+ggplot(releaseSpeed, aes(max_acc, color = passResult, fill = passResult)) +
+    geom_histogram(alpha = 0.5, binwidth = 0.5) +
+    theme_bw()
+fig_nums(name = "releaseAccel", caption = "Histogram of Football maximum accelerations with outcomes for week 1 2018")
+
+```
+
+Comparing the two histograms, I'm surprised to see that speed appears
+to be a better way to sort out Sacks from the results than
+acceleration. There is a clear difference with over 10 not having any
+sacks. Is it important to sort it out? I don't know, but it seemed
+important at the time. 
+
+
+Oh well, that's a bit of a red herring. So what is it we want to do?
+Well, let's look at EPA and maybe the personnel. This will be
+dependent on a lot of stuff, but here goes
+
+```{r EPA}
+epa_pitb <-
+    all_plays %>%
+    group_by(defendersInTheBox) %>%
+    summarise(total_epa = sum(epa))
+
+epa_pO <-
+    all_plays %>%
+    group_by(personnelO) %>%
+    summarise(n_epa = n())
+
+epa_defoff <-
+    all_plays %>%
+    group_by(defendersInTheBox, personnelO) %>%
+    summarise(total_epa = sum(epa)) %>%
+    arrange(desc(total_epa))
+
+ggplot(all_plays, aes(y = personnelO, x = epa)) +
+    geom_boxplot() +
+    theme_bw()
+fig_nums(name = "OffPers", caption = "Expected Points Added (epa) for each offensive personnel grouping")
+
+ggplot(all_plays, aes(y = as.character(defendersInTheBox), x = epa)) +
+    geom_boxplot() +
+    theme_bw()
+fig_nums(name = "DefPers", caption = "Expected Points Added (epa) for each defenders in the box grouping")
+
 
 ```
 
