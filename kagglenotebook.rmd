@@ -1,7 +1,7 @@
 ---
 title: "Working Kaggle Notebook"
 author: "Roy Emanuel"
-output: github_document
+output: word_document
 ---
 
 # Initial Data Plots of the field during a play
@@ -18,6 +18,9 @@ Plot of the first play available.
 
 ```{r echo = FALSE}
 library(tidyverse)
+library(rstan)
+options(mc.cores = parallel::detectCores())
+rstan_options(auto_write = TRUE)
 ## load the week one data
 w1 <- read_csv("week1.csv")
 all_plays <- read_csv("plays.csv")
@@ -109,3 +112,22 @@ ggplot(w1p1, aes(x, y, color = displayName)) +
     theme_bw()
 
 ```
+
+# Analysis
+
+I want to find the relationship between defendersInTheBox, personnelO,
+and expected points added (epa). EPA takes down, distance, and field
+position into account, so we will consider these issues handled for
+now. 
+
+First we will build a linear model. The minimum recorded epa is
+-11.94. The maximum recorded epa is 8.629. What is the likelihood?
+What is the prior? Let's start with a normal likelihood, normal prior,
+and see what comes out. Everything is additive, and away we go...
+
+$$y_{i} ~ \text{Normal}\left(\mu_i, \sigma\right)$$
+
+$$mu_i = \beta_0 + \beta_{def}x_{def,i} + \beta{off}x_{off,i}$$
+
+$$\sigma ~ \text{Gamma}\left(0.1, 0.1\right)$$
+
