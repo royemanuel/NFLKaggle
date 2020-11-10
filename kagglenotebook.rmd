@@ -207,8 +207,30 @@ $$mu_i = \beta_0 + \beta_{def}x_{def,i} + \beta{off}x_{off,i}$$
 $$\sigma \~ \text{Gamma}\left(0.1, 0.1\right)$$
 
 ```{r firstFit}
+all_playsCat <-
+    all_plays %>%
+    mutate(quarter = as.factor(quarter),
+           down = as.factor(down))
+
 fitOffDef <-
-    stan_glm(
-        epa ~ defendersInTheBox + personnelO + defendersInTheBox:personnelO,
+    stan_glmer(
+        epa ~ defendersInTheBox +
+            personnelO +
+            defendersInTheBox +
+            yardsToGo +
+            down +
+            quarter +
+            personnelD +
+       personnelO | personnelD,
+        data = all_plays[1:500,] )
+
+fitOffDeflm <-
+    lm(
+        epa ~ defendersInTheBox + personnelO ,
         data = all_plays)
+
+fOD <-
+    stan_glmer(
+        epa ~ yardsToGo | personnelO,
+        data = all_plays[1:500,])
 ```
