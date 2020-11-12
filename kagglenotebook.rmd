@@ -1,7 +1,7 @@
 ---
 title: "Working Kaggle Notebook"
 author: "Roy Emanuel"
-output: word_document
+output: github_document
 ---
 
 # Initial Data Plots of the field during a play
@@ -211,26 +211,19 @@ all_playsCat <-
     all_plays %>%
     mutate(quarter = as.factor(quarter),
            down = as.factor(down))
+if(file.exists("fitOffDef.Rdata"){
+    load("fitOffDef.Rdata")
+} else {
+    fitOffDef <-
+        stan_glmer(
+            epa ~ defendersInTheBox +
+                personnelO +
+                defendersInTheBox +
+                yardsToGo +
+                down +
+                quarter +
+                1 | personnelD,
+            data = all_plays[1:500,] )
+}
 
-fitOffDef <-
-    stan_glmer(
-        epa ~ defendersInTheBox +
-            personnelO +
-            defendersInTheBox +
-            yardsToGo +
-            down +
-            quarter +
-            personnelD +
-       personnelO | personnelD,
-        data = all_plays[1:500,] )
-
-fitOffDeflm <-
-    lm(
-        epa ~ defendersInTheBox + personnelO ,
-        data = all_plays)
-
-fOD <-
-    stan_glmer(
-        epa ~ yardsToGo | personnelO,
-        data = all_plays[1:500,])
 ```
