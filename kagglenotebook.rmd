@@ -22,7 +22,6 @@ Plot of the first play available.
 
 
 ```{r echo = FALSE}
-library(tidyverse)
 library(rstan)
 library(rstanarm)
 options(mc.cores = parallel::detectCores())
