@@ -1,7 +1,7 @@
 ---
 title: "Working Kaggle Notebook"
 author: "Roy Emanuel"
-output: word_document
+output: github_document
 ---
 
 # Initial Data Plots of the field during a play
@@ -206,8 +206,23 @@ $$mu_i = \beta_0 + \beta_{def}x_{def,i} + \beta{off}x_{off,i}$$
 $$\sigma \~ \text{Gamma}\left(0.1, 0.1\right)$$
 
 ```{r firstFit}
-fitOffDef <-
-    stan_glm(
-        epa ~ defendersInTheBox + personnelO + defendersInTheBox:personnelO,
-        data = all_plays)
+all_playsCat <-
+    all_plays %>%
+    mutate(quarter = as.factor(quarter),
+           down = as.factor(down))
+if(file.exists("fitOffDef.Rdata"){
+    load("fitOffDef.Rdata")
+} else {
+    fitOffDef <-
+        stan_glmer(
+            epa ~ defendersInTheBox +
+                personnelO +
+                defendersInTheBox +
+                yardsToGo +
+                down +
+                quarter +
+                1 | personnelD,
+            data = all_plays[1:500,] )
+}
+
 ```
