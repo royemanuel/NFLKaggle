@@ -1,7 +1,7 @@
 ---
 title: "Working Kaggle Notebook"
 author: "Roy Emanuel"
-output: github_document
+output: word_document
 ---
 
 # Initial Data Plots of the field during a play
@@ -28,7 +28,10 @@ options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
 ## load the week one data
 w1 <- read_csv("week1.csv")
-all_plays <- read_csv("plays.csv")
+
+all_plays <- read_csv("plays.csv") %>%
+    filter(!is.na(personnelD))
+
 game_data <- read_csv("games.csv")
 
 w1p1 <-
@@ -199,30 +202,179 @@ First we will build a linear model. The minimum recorded epa is
 What is the prior? Let's start with a normal likelihood, normal prior,
 and see what comes out. Everything is additive, and away we go...
 
-$$y_{i} \~ \text{Normal}\left(\mu_i, \sigma\right)$$
+$$y_{i} \sim \text{Normal}\left(\mu_i, \sigma\right)$$
 
 $$mu_i = \beta_0 + \beta_{def}x_{def,i} + \beta{off}x_{off,i}$$
 
-$$\sigma \~ \text{Gamma}\left(0.1, 0.1\right)$$
+$$\sigma \sim \text{Gamma}\left(0.1, 0.1\right)$$
 
 ```{r firstFit}
 all_playsCat <-
     all_plays %>%
     mutate(quarter = as.factor(quarter),
            down = as.factor(down))
-if(file.exists("fitOffDef.Rdata"){
-    load("fitOffDef.Rdata")
-} else {
-    fitOffDef <-
-        stan_glmer(
-            epa ~ defendersInTheBox +
-                personnelO +
-                defendersInTheBox +
-                yardsToGo +
-                down +
-                quarter +
-                1 | personnelD,
-            data = all_plays[1:500,] )
-}
+
+## if(file.exists("fitOffDef.Rdata")){
+##     load("fitOffDef.Rdata")
+## } else {
+##     fitOffDef <-
+##         stan_glmer(
+##             epa ~ defendersInTheBox +
+##                 personnelO +
+##                 defendersInTheBox +
+##                 yardsToGo +
+##                 down +
+##                 quarter +
+##                 1 | personnelD,
+##             data = all_plays )
+##     save(fitOffDef, file = "fitOffDef.Rdata")
+## }
+
+
+## fitDown <-
+##     stan_glm(
+##         epa ~ yardsToGo,
+##         data = all_plays,
+##         family = gaussian("identity"),
+##         seed = 12345)
+
+## fitResult <-
+##     stan_glm(
+##         epa ~ passResult,
+##         family = gaussian("identity"),
+##         data = all_plays,
+##         seed = 12345)
+```
+
+Kaggle has a list of questions. Let's start with that:
+
+1. What are coverage schemes that the defense employs? 
+1. What coverage options tend to be better performaing?
+1. What players are the best at closely tracking receivers as they try
+to get open?
+1. Which players are the best at closing on receivers when the ball is
+   in the air?
+1. Which players at defending pass plays when the ball arrives?
+1. Is there any way to use player tracking data to predict whether or
+   not certain penalties will be called?
+1. Who are the NFL's best players against the pass?
+1. How does a defense react to certain types of offensive plays?
+1. Is there anything about a player that can be used to predict their
+   performance on defense?
+   
+# What are overage schemes that the defense employs
+
+We'll start with the NFL overall, then which teams employ certain
+defenses, then which teams have certain defenses employed against
+them.
+
+## Overall NFL defensive employment
+
+```{r defEmployment}
+## split the personnelD into all types of personnel
+
+all_plays <-
+    all_plays %>%
+    mutate(DL = str_extract(personnelD, "\\d(?= DL)"),
+           LB = str_extract(personnelD, "\\d(?= LB)"),
+           DB = str_extract(personnelD, "\\d(?= DB)"),
+           WR = str_extract(personnelD, "\\d(?= WR)"),
+           TE = str_extract(personnelD, "\\d(?= TE)"),
+           RB = str_extract(personnelD, "\\d(?= RB)"))
+           
+
+pD <-
+    all_plays %>%
+    group_by(personnelD) %>%
+    summarise(Num = n(),
+              Perc = 100 * Num / dim(all_plays)[1]) %>%
+    arrange(desc(Num))
+
+pander(pD, caption = table_nums("AllDef", caption = "Types of Defensive Personnel and Frequency for Pass Plays"))
+
+pDL <-
+    all_plays %>%
+    group_by(DL) %>%
+    summarise(Num = n(),
+              Perc = 100 * Num / dim(all_plays)[1]) %>%
+    arrange(desc(Num))
+
+pLB <-
+    all_plays %>%
+    group_by(LB) %>%
+    summarise(Num = n(),
+              Perc = 100 * Num / dim(all_plays)[1]) %>%
+    arrange(desc(Num))
+
+pDB <-
+    all_plays %>%
+    group_by(DB) %>%
+    summarise(Num = n(),
+              Perc = 100 * Num / dim(all_plays)[1]) %>%
+    arrange(desc(Num))
+
+pander(pDL, caption = table_nums("DLDef", caption = "Number of Defensive Linemen and Frequency for Pass Plays"))
+pander(pLB, caption = table_nums("LBDef", caption = "Number of Linebackers and Frequency for Pass Plays"))
+pander(pDB, caption = table_nums("DBDef", caption = "Number of Defensive Backs and Frequency for Pass Plays"))
+
+```
+
+Let's see how the composition of the linemen affect the outcome of the play.
+
+```{r trimDef}
+
+pOutcomeDL <-
+    all_plays %>%
+    group_by(DL, passResult) %>%
+    summarise(Num = n()) %>%
+    arrange(desc(DL))
+
+totOutcome <-
+    pOutcomeDL %>%
+    summarise(typeSum = sum(Num))
+
+pOutcomeDL <-
+    left_join(pOutcomeDL, totOutcome, by = "DL") %>%
+    mutate(percentage = 100 *  Num / typeSum)
+
+pOutcomeLB <-
+    all_plays %>%
+    group_by(LB, passResult) %>%
+    summarise(Num = n()) %>%
+    arrange(desc(LB))
+
+totOutcome <-
+    pOutcomeLB %>%
+    summarise(typeSum = sum(Num))
+
+pOutcomeLB <-
+    left_join(pOutcomeLB, totOutcome, by = "LB") %>%
+    mutate(percentage = 100 *  Num / typeSum)
+
+pOutcomeDB <-
+    all_plays %>%
+    group_by(DB, passResult) %>%
+    summarise(Num = n()) %>%
+    arrange(desc(Num))
+
+totOutcome <-
+    pOutcomeDB %>%
+    summarise(typeSum = sum(Num))
+
+pOutcomeDB <-
+    left_join(pOutcomeDB, totOutcome, by = "DB") %>%
+    mutate(percentage = 100 *  Num / typeSum)
+
+pOutcomeDL %>%
+    arrange(DL) %>%
+    pander(caption = "Pass Outcomes by Number of Defensive Linemen")
+
+pOutcomeLB %>%
+    arrange(LB) %>%
+    pander(caption = "Pass Outcomes by Number of Linebackers")
+
+pOutcomeDB %>%
+    arrange(DB) %>%
+    pander(caption = "Pass Outcomes by Number of Defensive Backs")
 
 ```
