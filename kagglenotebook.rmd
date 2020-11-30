@@ -160,7 +160,7 @@ Oh well, that's a bit of a red herring. So what is it we want to do?
 Well, let's look at EPA and maybe the personnel. This will be
 dependent on a lot of stuff, but here goes
 
-```{r EPA}
+```{r EPA, fig.height=8}
 epa_pitb <-
     all_plays %>%
     group_by(defendersInTheBox) %>%
@@ -221,7 +221,7 @@ all_playsCat <-
 ##         stan_glmer(
 ##             epa ~ defendersInTheBox +
 ##                 personnelO +
-##                 defendersInTheBox +
+##                 defendersInThBeox +
 ##                 yardsToGo +
 ##                 down +
 ##                 quarter +
